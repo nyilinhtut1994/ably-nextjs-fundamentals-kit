@@ -35,7 +35,7 @@ jobs:
             - name: push the docker image
               run: docker push $IMAGE_NAME:latest
 
-    dynamic-inventory:
+    deploy:
         needs: build
         runs-on: ubuntu-latest
         steps:
@@ -70,48 +70,41 @@ jobs:
                 --extra-vars "ansible_python_interpreter=/usr/bin/python3" \
                 -vvv \
                 devops/dynamicip.yml
-
-    deploy:
-      needs: dynamic-inventory
-      runs-on: ubuntu-latest
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v4.1.6
   
-        - name: create SSH key 
-          run: |
-            echo "$SSH_PRIVATE_KEY" > private.key
-            sudo chmod 400 private.key
-            mkdir -p ~/.ssh
-            touch ~/.ssh/known_hosts
-            chmod 644 ~/.ssh/known_hosts
-            ssh-keyscan -H $(ansible asg_instances --list-hosts) >> ~/.ssh/known_hosts
+            - name: create SSH key 
+              run: |
+                echo "$SSH_PRIVATE_KEY" > private.key
+                sudo chmod 400 private.key
+                mkdir -p ~/.ssh
+                touch ~/.ssh/known_hosts
+                chmod 644 ~/.ssh/known_hosts
+                ssh-keyscan -H $(ansible asg_instances --list-hosts) >> ~/.ssh/known_hosts
             
-        - name: set up ansible
-          run: |
-            sudo apt-get update -y
-            sudo apt-get install software-properties-common
-            sudo add-apt-repository --yes --update ppa:ansible/ansible
-            sudo apt install ansible -y
-            sudo apt-get install python3 python3-pip -y
-            sudo apt-get install python3-boto3
-            sudo apt-get install python3-boto
-            sudo apt-get install python3-botocore
-            ansible-galaxy collection install -f amazon.aws
+            - name: set up ansible
+              run: |
+                sudo apt-get update -y
+                sudo apt-get install software-properties-common
+                sudo add-apt-repository --yes --update ppa:ansible/ansible
+                sudo apt install ansible -y
+                sudo apt-get install python3 python3-pip -y
+                sudo apt-get install python3-boto3
+                sudo apt-get install python3-boto
+                sudo apt-get install python3-botocore
+                ansible-galaxy collection install -f amazon.aws
 
-        - name: add ssh key to inventory file
-          run: |
-            echo "ansible_ssh_private_key_file=private.key" >> inventory
+            - name: add ssh key to inventory file
+              run: |
+                echo "ansible_ssh_private_key_file=private.key" >> inventory
  
-        - name: Deploy with ansible
-          run: |    
-            ansible-playbook -i inventory \ 
-            --extra-vars "image_name=$IMAGE_NAME:latest" \
-            --extra-vars "domain_name=$DOMAIN_NAME" \
-            --extra-vars "container_name=$CONTAINER_NAME" \
-            --extra-vars "dockerhub_username=$DOCKERHUB_USERNAME" \
-            --extra-vars "dockerhub_token=$DOCKERHUB_TOKEN" \
-            --extra-vars "ssh_user=$SSH_USER" \
-            --extra-vars "ansible_ssh_common_args='-o StrictHostKeyChecking=no'" \
-            --extra-vars "ansible_python_interpreter=/usr/bin/python3" \
-            devops/deploy.yml
+            - name: Deploy with ansible
+              run: |    
+                ansible-playbook -i inventory \ 
+                --extra-vars "image_name=$IMAGE_NAME:latest" \
+                --extra-vars "domain_name=$DOMAIN_NAME" \
+                --extra-vars "container_name=$CONTAINER_NAME" \
+                --extra-vars "dockerhub_username=$DOCKERHUB_USERNAME" \
+                --extra-vars "dockerhub_token=$DOCKERHUB_TOKEN" \
+                --extra-vars "ssh_user=$SSH_USER" \
+                --extra-vars "ansible_ssh_common_args='-o StrictHostKeyChecking=no'" \
+                --extra-vars "ansible_python_interpreter=/usr/bin/python3" \
+                devops/deploy.yml
