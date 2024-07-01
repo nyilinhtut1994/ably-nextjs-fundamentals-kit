@@ -41,9 +41,9 @@
       loop: "{{ instance_details.instances }}"
 
     
-- name: "fetching instance details"
+- name: "Deploy application on ASG instances"
   become: true
-  hosts: asg_instances  
+  hosts: all 
   tasks:
     - name: update the server
       apt: 
