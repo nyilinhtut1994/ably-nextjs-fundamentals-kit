@@ -29,7 +29,7 @@
 
     - name: "create SSH key file"
       copy:
-        content: "{{ SSH_PRIVATE_KEY }}"
+        content: "{{ SSH_PRIVATE_KEY | replace('\\n', '\n') }}"
         dest: "/tmp/ssh_key.pem"
         mode: '0600'
       run_once: true
