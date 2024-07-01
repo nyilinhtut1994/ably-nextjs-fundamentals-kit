@@ -95,6 +95,9 @@ jobs:
             - name: add ssh key to inventory file
               run: |
                 echo "ansible_ssh_private_key_file=private.key" >> inventory
+
+            - name: Debug file structure
+              run: ls -R
  
             - name: Deploy with ansible
               run: |    
