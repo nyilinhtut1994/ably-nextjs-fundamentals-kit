@@ -40,23 +40,25 @@
         ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
       loop: "{{ instance_details.instances }}"
 
+    
+- name: "fetching instance details"
+  become: true
+  hosts: asg_instances  
+  tasks:
     - name: update the server
       apt: 
         update_cache: yes
-      become: true
     
     - name: ensure dependencies are met
       shell: |
         sudo dpkg --audit
         sudo apt-get update --fix-missing
         sudo apt-get install -f
-      become: true
     
     - name: pull the image
       docker_image:
         name: "{{ IMAGE_NAME }}"
         source: pull
-      become: true
 
     - name: run the docker container
       docker_container:
@@ -66,7 +68,6 @@
         restart_policy: always
         ports:
           - "3000:3000"
-      become: true
 
     - name: wait for the container to start
       wait_for:
@@ -74,5 +75,4 @@
         port: 3000
         delay: 5
         timeout: 60
-      become: true
   
