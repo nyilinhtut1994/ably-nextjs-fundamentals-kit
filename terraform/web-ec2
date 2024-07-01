@@ -1,0 +1,98 @@
+/*data "aws_ami" "_ami" {
+  provider    = aws.main
+  most_recent = true
+  owners      = ["099720109477"] # ubuntu #if owner is amazon add "amazon"
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/*ubuntu-*"]
+  }
+}
+*/
+
+
+resource "aws_instance" "web_ec2" {
+  provider          = aws.main
+  count             = 1
+  ami               = "ami-0be48b687295f8bd6"
+  instance_type     = var.instance_type
+  availability_zone = element(["ap-southeast-1a", "ap-southeast-1b", "ap-southeast-1c"], count.index)
+  key_name          = var.key_pair
+  #security_groups    = [var.security_group]
+  vpc_security_group_ids = [aws_security_group.web_tier.id]
+  subnet_id              = aws_subnet.public_subnet[count.index].id
+
+
+  # Additional EBS volume
+  root_block_device {
+    volume_type = "gp2"
+    volume_size = 10 # Size in GiB
+  }
+
+
+  user_data = <<-EOF
+        #!/bin/bash
+        # Add your user data script here
+        #update the server
+        sudo apt update -y
+        sudo apt upgrade -y
+
+        #check and install docker
+        if  [ -x "$(command -v docker)"]
+        then
+            echo "Docker not found. Installing Docker..."
+            sudo apt-get install -y docker.io
+            sudo systemctl start docker
+            sudo systemctl enable docker
+            sudo usermod -aG docker ubuntu
+        else   
+            echo "Docker is already installed."
+        fi
+
+        #Install AWS CLI if not installed
+        if  [ -x "$(command -v aws)"]
+        then
+            echo "AWS CLI not found. Installing AWS CLI..."
+            sudo apt-get install -y awscli
+        else
+            echo "AWS CLI is already installed..."
+        fi
+
+        # Install CodeDeploy agent if not installed
+        #if  [ -x "$(command -v codedeploy-agent)"]
+        #then
+            #echo "CodeDeploy agent is not found.Installing CodeDeploy agent..."
+            #sudo apt-get install -y ruby
+            #cd /tmp
+            #wget https://aws-codedeploy-us-west-2.s3.us-west-2.amazonaws.com/latest/install
+            #chmod +x ./install
+            #sudo ./install auto
+            #sudo service codedeploy-agent start
+        #else
+            #echo "CodeDeploy agent is already installed"
+        #fi
+
+        #install SSM
+        mkdir /tmp/ssm
+        cd /tmp/ssm
+        wget https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/debian_amd64/amazon-ssm-agent.deb
+        sudo dpkg -i amazon-ssm-agent.deb
+        sudo systemctl enable amazon-ssm-agent
+
+        #Log in to Amazon ECR
+        echo "Log in to Amzaon ECR"
+        $(aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 161969826958.dkr.ecr.ap-southeast-1.amazonaws.com)
+
+        # Pull the latest Docker image
+        docker pull 161969826958.dkr.ecr.ap-southeast-1.amazonaws.com/e-commerce
+
+        # Run the image
+        docker run -d 161969826958.dkr.ecr.ap-southeast-1.amazonaws.com/e-commerce
+    EOF
+
+  tags = {
+    Name        = var.ec2_name[1]
+    Project     = var.project,
+    Environment = var.environment
+  }
+}

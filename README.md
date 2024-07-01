@@ -41,6 +41,36 @@ npm run dev
 yarn dev
 ```
 
+## Deploy with Docker on AWS EC2 instance behind ALB and ASGs
+
+![topology](https://i.imgur.com/1XeVnxa.png)
+
+### Create a Docker file
+```
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm install 
+
+COPY . .
+
+RUN npm run build
+
+EXPOSE 3000
+
+CMD [ "npm", "start" ]
+```
+### Create an Ansible Playbook
+
+Create `playbook.yml` file under devops folder.
+
+### Create GitHub Action file
+
+Create `main.yml` file under .github/workflows.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

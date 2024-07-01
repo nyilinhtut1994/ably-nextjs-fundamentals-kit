@@ -1,0 +1,70 @@
+name: nextjs deploy
+
+env: 
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME}}
+  DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN}}
+
+  SSH_USER: ${{ vars.SSH_USER}}
+  IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+  DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
+  CONTAINER_NAME: ${{ vars.CONTAINER_NAME }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+
+on:
+    push:
+        branches:
+            - master
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4.1.6
+
+            - name: login to the docker hub with token
+              run: |
+                echo $DOCKERHUB_TOKEN | docker login -u $DOCKERHUB_USERNAME --password-stdin
+
+            - name: build the docker image
+              run: docker build -t $IMAGE_NAME:latest .
+              
+            - name: push the docker image
+              run: docker push $IMAGE_NAME:latest
+
+    deploy:
+        needs: build
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4.1.6
+
+            - name: set up ansible
+              run: |
+                sudo apt-get update -y
+                sudo apt-get install software-properties-common
+                sudo add-apt-repository --yes --update ppa:ansible/ansible
+                sudo apt install ansible -y
+                sudo apt-get install python3 python3-pip -y
+                sudo apt-get install python3-boto3
+                sudo apt-get install python3-boto
+                sudo apt-get install python3-botocore
+                ansible-galaxy collection install -f amazon.aws
+
+            - name: Deploy with ansible
+              run: |
+                ansible-playbook \
+                --extra-vars "image_name=$IMAGE_NAME:latest" \
+                --extra-vars "domain_name=$DOMAIN_NAME" \
+                --extra-vars "container_name=$CONTAINER_NAME" \
+                --extra-vars "dockerhub_username=$DOCKERHUB_USERNAME" \
+                --extra-vars "aws_access_key=$AWS_ACCESS_KEY" \
+                --extra-vars "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" \
+                --extra-vars "dockerhub_token=$DOCKERHUB_TOKEN" \
+                --extra-vars "ssh_private_key=$SSH_PRIVATE_KEY" \
+                --extra-vars "ansible_ssh_common_args='-o StrictHostKeyChecking=no'" \
+                --extra-vars "ansible_python_interpreter=/usr/bin/python3" \
+                devops/playbook.yml
