@@ -4,7 +4,7 @@ resource "aws_db_instance" "mysql_main" {
   provider          = aws.main
   allocated_storage = var.db_storage_size
   storage_type      = var.db_storage_type
-  db_name           = "nodejs"
+  db_name           = "ably"
   engine            = "mysql"
   engine_version    = "8.0.36"
   instance_class    = var.rds_instance_type
