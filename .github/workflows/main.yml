@@ -42,6 +42,13 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4.1.6
 
+            - name: create SSH key 
+              run: |
+                echo "$SSH_PRIVATE_KEY" > private.key
+                sudo chmod 600 private.key
+                eval 'ssh-agent -s'
+                ssh-add private.key
+
             - name: set up ansible
               run: |
                 sudo apt-get update -y
