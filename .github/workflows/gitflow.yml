@@ -79,25 +79,14 @@ jobs:
                 touch ~/.ssh/known_hosts
                 chmod 644 ~/.ssh/known_hosts
 
-            
-            - name: set up ansible
-              run: |
-                sudo apt-get update -y
-                sudo apt-get install software-properties-common
-                sudo add-apt-repository --yes --update ppa:ansible/ansible
-                sudo apt install ansible -y
-                sudo apt-get install python3 python3-pip -y
-                sudo apt-get install python3-boto3
-                sudo apt-get install python3-boto
-                sudo apt-get install python3-botocore
-                ansible-galaxy collection install -f amazon.aws
-
             - name: add ssh key to inventory file
               run: |
                 echo "ansible_ssh_private_key_file=private.key" >> inventory
 
             - name: Debug file structure
-              run: ls -R
+              run: |
+                ls -R
+                ls -R devops/
  
             - name: Deploy with ansible
               run: |    
