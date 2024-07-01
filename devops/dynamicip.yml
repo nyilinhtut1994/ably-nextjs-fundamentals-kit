@@ -1,0 +1,36 @@
+---
+ 
+- name: "fetching instance details"
+  become: false
+  hosts: localhost
+  vars:
+    region: "ap-southeast-1"
+    asg_name: "ably" 
+    SSH_USER: "{{ ssh_user }}"
+    AWS_SECRET_ACCESS_KEY: "{{ aws_secret_access_key }}" 
+    AWS_ACCESS_KEY: "{{ aws_access_key }}"       #name of autoscaling group
+  tasks:
+    - name: Debug Python interpreter
+      debug:
+        msg: "{{ ansible_playbook_python }}"
+
+    - name: "gathering instance details"
+      amazon.aws.ec2_instance_info:
+        region: "{{ region }}"
+        filters:
+          "tag:aws:autoscaling:groupName": "{{ asg_name }}"
+          instance-state-name: [ "running" ]
+      register: instance_details
+
+    - name: "creating dynamic inventory"
+      add_host:
+        groups: "asg_instances"
+        hostname: "{{ item.public_ip_address }}"
+        ansible_user: "{{ SSH_USER }}"
+        ansible_ssh_host: '{{ item.public_ip_address }}'
+        ansible_ssh_port: "22"
+        ansible_ssh_private_key_file: "private.key"
+        ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+      loop: "{{ instance_details.instances }}"
+
+    
