@@ -15,7 +15,6 @@
     AWS_SECRET_ACCESS_KEY: "{{ aws_secret_access_key }}" 
     AWS_ACCESS_KEY: "{{ aws_access_key }}"       #name of autoscaling group
   tasks:
-
     - name: Debug Python interpreter
       debug:
         msg: "{{ ansible_playbook_python }}"
@@ -30,7 +29,7 @@
 
     - name: "create SSH key file"
       copy:
-        content: "{{ SSH_PRIVATE_KEY }}"
+        content: "{{ SSH_PRIVATE_KEY | replace('\\n', '\n') }}"
         dest: "/tmp/ssh_key"
         mode: '0600'
       run_once: true
