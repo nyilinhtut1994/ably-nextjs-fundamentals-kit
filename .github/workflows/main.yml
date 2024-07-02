@@ -42,8 +42,9 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4.1.6
 
-            - name: Change SSH key permission
+            - name: SSH key permission
               run: |
+                sudo echo "$SSH_PRIVATE_KEY" > test
                 sudo chmod 600 test
                 
 
@@ -62,7 +63,7 @@ jobs:
             - name: Deploy with ansible
               run: |
                 ansible-playbook \
-                --extra-vars "image_name=$IMAGE_NAME:latest" \
+                --extra-vars "image_name=$IMAGE_NAME" \
                 --extra-vars "domain_name=$DOMAIN_NAME" \
                 --extra-vars "container_name=$CONTAINER_NAME" \
                 --extra-vars "dockerhub_username=$DOCKERHUB_USERNAME" \
