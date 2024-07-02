@@ -42,10 +42,9 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4.1.6
 
-            - name: create SSH key 
+            - name: Change SSH key permission
               run: |
-                echo "$SSH_PRIVATE_KEY" > ./windows
-                sudo chmod 600 ./windows
+                sudo chmod 600 test
                 
 
             - name: set up ansible
