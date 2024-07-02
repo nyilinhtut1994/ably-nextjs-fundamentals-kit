@@ -44,8 +44,9 @@ jobs:
 
             - name: SSH key permission
               run: |
-                sudo echo "$SSH_PRIVATE_KEY" > test
+                echo "$SSH_PRIVATE_KEY" > test
                 sudo chmod 600 test
+                ssh-add test
                 
 
             - name: set up ansible
