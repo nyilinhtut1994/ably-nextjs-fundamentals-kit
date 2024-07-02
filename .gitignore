@@ -40,5 +40,4 @@ terraform/terraform*
 terraform/test*
 sshkey
 sshk*
-test
-test*
+test.pub
